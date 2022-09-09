@@ -1,0 +1,33 @@
+{
+  "name": "bpl-museum-passes-backend",
+  "version": "0.5.0",
+  "description": "Bpl museum backend that gathers museum information and disbrutions",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamericfletcher/bpl-museum-passes-backend.git"
+  },
+  "author": "iamericfletcher",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iamericfletcher/bpl-museum-passes-backend/issues"
+  },
+  "homepage": "https://github.com/iamericfletcher/bpl-museum-passes-backend#readme",
+  "dependencies": {
+    "@prisma/client": "^4.3.1",
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.2",
+    "express": "^4.18.1",
+    "mailgun-js": "^0.22.0",
+    "moment-timezone": "^0.5.37",
+    "node-fetch": "^2.6.7",
+    "prisma": "^4.3.1",
+    "twilio": "^3.82.0"
+  }
+}
