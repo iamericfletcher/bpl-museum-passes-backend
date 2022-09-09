@@ -2,6 +2,10 @@ import express from "express"
 import dotenv from "dotenv"
 import { updateCache } from "./src/scrapper.js"
 import { cache } from "./src/cache.js"
+import { prisma } from "./src/client.js"
+import fetch from "node-fetch"
+import bodyParser from "body-parser"
+
 
 dotenv.config()
 
@@ -9,7 +13,10 @@ updateCache()
 setInterval(updateCache, 600000)
 
 const app = express()
-const port = 3000
+const port = 3001
+
+// parse application/json
+app.use(bodyParser.json())
 
 app.get('/', (req, res) => {
 	if (cache.value.lastScraped === null) {
@@ -18,7 +25,39 @@ app.get('/', (req, res) => {
 		})
 	}
 
-	res.json(cache)
+	res.json(cache.value)
+})
+
+app.post('/', async (req, res) => {
+	// Google Recaptcha check
+    const human = validateHuman(req.body.token);
+
+    async function validateHuman(token) {
+        const secret = process.env.RECAPTCHA_SECRET_KEY;
+        const response = await fetch(
+            `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
+            {
+                method: "POST",
+            }
+        );
+        const data = await response.json();
+
+        // return false;
+        return data.success;
+    }
+
+    // Do this if not passing recaptcha check - validateHuman()
+    if (!human) {
+        res.status(400).json({error: "Unauthorized - failed recaptcha"});
+        return;
+    }
+
+    const requestData = req.body.body;
+    const savedRequest = await prisma.request.create({
+        data: requestData
+    })
+
+    res.json(savedRequest);
 })
 
 app.listen(port, () => {

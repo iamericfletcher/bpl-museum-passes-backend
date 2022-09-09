@@ -1,10 +1,10 @@
 import TwilioClient from "twilio"
 import mailgun from "mailgun-js"
 import moment from "moment-timezone"
-import { PrismaClient } from "@prisma/client"
 import { cache } from "./cache.js"
 import { load } from "cheerio"
 import fetch from "node-fetch"
+import { prisma } from "./client.js"
 
 export async function updateCache() {
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -15,7 +15,6 @@ export async function updateCache() {
     const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
     const mg = mailgun({apiKey: MAILGUN_API_KEY, domain: MAILGUN_DOMAIN});
 
-    const prisma = new PrismaClient();
     const museumNamesForSelectField = [];
     const museumNamesForScraping = [];
     const museumObj = {};
