@@ -24,7 +24,6 @@ app.get('/', (req, res) => {
 			message: 'Cache not available'
 		})
 	}
-
 	res.json(cache.value)
 })
 
