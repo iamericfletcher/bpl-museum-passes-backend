@@ -10,6 +10,8 @@ I found this frustrating, so I built a notification application that notifies us
 
 Most of the museum options have plenty of passes available all the time. This application is more helpful for the small number of museums that regularly have no passes available in the near term (Isabella Stewart Gardner Museum, etc.)
 
+Data is deleted from the database whenever a notification is sent out or if a pass doesn't become available by end of the day on the user provided date of visit. Absolutely no data is used for any other purpose such as marketing or advertising.
+
 Link to the front end GitHub repository - https://github.com/iamericfletcher/bpl-museum-passes
 
 ## Technology Stack
