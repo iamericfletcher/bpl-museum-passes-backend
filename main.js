@@ -10,7 +10,7 @@ import bodyParser from "body-parser"
 dotenv.config()
 
 updateCache()
-setInterval(updateCache, 5400000)
+setInterval(updateCache, 6000000)
 
 const app = express()
 const port = 3001

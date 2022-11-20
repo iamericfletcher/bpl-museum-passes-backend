@@ -39,65 +39,66 @@ export async function updateCache() {
         }
     });
     // Need to create a delay, otherwise the site's server will error out with a 500 status error
-    const delay = (ms = 5000) => new Promise((r) => setTimeout(r, ms));
+    const delay = (ms = 3000) => new Promise((r) => setTimeout(r, ms));
 
 
     const scrapeSequentially = async () => {
         for (let i = 0; i < museumNamesForScraping.length; i++) {
-
-            const res = await fetch(
-                "https://www.eventkeeper.com/mars/tkflex.cfm?curOrg=BOSTON&curNumDays=60&curKey2=AVA&curKey1=" +
-                museumNamesForScraping[i]
-            )
-                .then((res) => res.text())
-                .then((text) => {
-                    $ = load(text);
-                });
-            // console.log("Current museum being scraped: " + museumNamesForScraping[i]);
-            museumObj[museumNamesForSelectField[i]] = {};
-            let tempDate = "";
-            let nextDate = "";
-            let numberPassesAvailCount = 0;
-            let hidePassCount = true;
-
-
-            const foo = $(".pr_container_left").filter((j, el) => {
-                // Find instances of the class "pr_container_left" that have a button with date included in onClick URL
-                // from this URL extract the date
-                var button = $(el).find("button");
-                // Check if that button has Request Pass text indicating that there is a pass available
-                for (let k = 0; k < button.length; k++) {
-                    if ($(button[k]).text().includes("Request Pass")) {
-                        nextDate = button
-                            .attr("onclick")
-                            .match(/(?<=Date=).+?(?=&cham)/g)
-                            .toString();
-                        if (nextDate !== tempDate) {
-                            tempDate = nextDate;
-                            if (!hidePassCount) {
+            await delay()
+            try {
+                const res = await fetch(
+                    "https://www.eventkeeper.com/mars/tkflex.cfm?curOrg=BOSTON&curNumDays=60&curKey2=AVA&curKey1=" +
+                    museumNamesForScraping[i]
+                )
+                    .then((res) => res.text())
+                    .then((text) => {
+                        $ = load(text);
+                    });
+                console.log("Current museum being scraped: " + museumNamesForScraping[i]);
+                museumObj[museumNamesForSelectField[i]] = {};
+                let tempDate = "";
+                let nextDate = "";
+                let numberPassesAvailCount = 0;
+                let hidePassCount = true;
+                const foo = $(".pr_container_left").filter((j, el) => {
+                    // Find instances of the class "pr_container_left" that have a button with date included in onClick URL
+                    // from this URL extract the date
+                    var button = $(el).find("button");
+                    // Check if that button has Request Pass text indicating that there is a pass available
+                    for (let k = 0; k < button.length; k++) {
+                        if ($(button[k]).text().includes("Request Pass")) {
+                            nextDate = button
+                                .attr("onclick")
+                                .match(/(?<=Date=).+?(?=&cham)/g)
+                                .toString();
+                            if (nextDate !== tempDate) {
+                                tempDate = nextDate;
+                                if (!hidePassCount) {
+                                    museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] =
+                                        numberPassesAvailCount;
+                                }
                                 museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] =
                                     numberPassesAvailCount;
+                                numberPassesAvailCount = 0;
+                                hidePassCount = false;
                             }
-                            museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] =
-                                numberPassesAvailCount;
-                            numberPassesAvailCount = 0;
-                            hidePassCount = false;
+                            numberPassesAvailCount = numberPassesAvailCount + 1;
                         }
-
-                        numberPassesAvailCount = numberPassesAvailCount + 1;
+                        museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] = numberPassesAvailCount;
                     }
+                });
+                if (numberPassesAvailCount === 0) {
                     museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] = numberPassesAvailCount;
                 }
-            });
-            if (numberPassesAvailCount === 0) {
-                museumObj[museumNamesForSelectField[i]][moment(tempDate).format("YYYY-MM-DD")] = numberPassesAvailCount;
+            } catch (err) {
+                console.log(err);
             }
         }
     };
     await scrapeSequentially();
     // get data from prisma database
     const dataFromPrisma = await prisma.request.findMany();
-    console.log(dataFromPrisma)
+    // console.log(dataFromPrisma)
     // iterate over data from prisma database
     for (let i = 0; i < dataFromPrisma.length; i++) {
         // iterate over museumObj
