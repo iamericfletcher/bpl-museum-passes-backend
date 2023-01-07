@@ -39,8 +39,7 @@ export async function updateCache() {
         }
     });
     // Need to create a delay, otherwise the site's server will error out with a 500 status error
-    const delay = (ms = 3000) => new Promise((r) => setTimeout(r, ms));
-
+    const delay = (ms = 15000) => new Promise((r) => setTimeout(r, ms));
 
     const scrapeSequentially = async () => {
         for (let i = 0; i < museumNamesForScraping.length; i++) {
@@ -94,6 +93,7 @@ export async function updateCache() {
                 console.log(err);
             }
         }
+        console.log("Scraping complete")
     };
     await scrapeSequentially();
     // get data from prisma database
