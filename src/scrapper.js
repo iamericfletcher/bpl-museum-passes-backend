@@ -24,6 +24,7 @@ export async function updateCache() {
         "https://www.eventkeeper.com/mars/tkflex.cfm?curOrg=BOSTON&curNumDays=1"
     ).then(res => res.text());
     var $ = load(data);
+
     const lastScraped = new Date().toISOString();
 	
 
@@ -95,42 +96,28 @@ export async function updateCache() {
         }
         console.log("Scraping complete")
     };
+
     await scrapeSequentially();
-    // get data from prisma database
-    const dataFromPrisma = await prisma.request.findMany();
-    // console.log(dataFromPrisma)
-    // iterate over data from prisma database
-    for (let i = 0; i < dataFromPrisma.length; i++) {
-        // iterate over museumObj
-        for (let j = 0; j < Object.keys(museumObj).length; j++) {
-            // if museumObj key matches dataFromPrisma key, update dataFromPrisma value with museumObj value
-            if (Object.keys(museumObj)[j] === dataFromPrisma[i].museum) {
-                // If the current date is +1 over the users date of visit, update the database and remove the row of data
-                if (!moment().endOf('day').isSameOrBefore(moment(dataFromPrisma[i].dateOfVisit).endOf('day'))) {
-                    console.log("Sending email to: " + dataFromPrisma[i].email);
-                    const data2 = {
-                        // from: 'Excited User <me@samples.mailgun.org>',
-                        from: `bpl-pass-notification@${MAILGUN_DOMAIN}`,
-                        to: dataFromPrisma[i].email,
-                        // to: 'bar@example.com, YOU@YOUR_DOMAIN_NAME',
-                        subject: 'Boston Public Library Museum Pass Notification',
-                        text: 'Greetings! \n\n' +
-                            'Unfortunately, no additional museum passes have become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
-                            'Please visit the link below for other museums to consider!\n\n' + new URL("https://www.bpl.org/reserve-a-museum-pass/") + '\n\n' +
-                            'Wishing you a pleasant rest of the day.\n\n' +
-                            'Sincerely,\n\n' +
-                            'Eric Fletcher\n' +
-                            'BPL Pass Notification Developer\n' +
-                            'EricFletcher3@gmail.com' + '\n' +
-                            new URL("https://bpl-museum-passes.vercel.app/")
-                    };
-                    mg.messages().send(data2, function (error, body) {
-                        console.log("Email Body: " + body);
-                    });
-                    console.log("Sending SMS to: " + dataFromPrisma[i].phone);
-                    client.messages
-                        .create({
-                            body: 'Greetings! \n\n' +
+
+    try {
+        // get data from prisma database
+        const dataFromPrisma = await prisma.request.findMany();
+        // iterate over data from prisma database
+        for (let i = 0; i < dataFromPrisma.length; i++) {
+            // iterate over museumObj
+            for (let j = 0; j < Object.keys(museumObj).length; j++) {
+                // if museumObj key matches dataFromPrisma key, update dataFromPrisma value with museumObj value
+                if (Object.keys(museumObj)[j] === dataFromPrisma[i].museum) {
+                    // If the current date is +1 over the users date of visit, update the database and remove the row of data
+                    if (!moment().endOf('day').isSameOrBefore(moment(dataFromPrisma[i].dateOfVisit).endOf('day'))) {
+                        console.log("Sending email to: " + dataFromPrisma[i].email);
+                        const data2 = {
+                            // from: 'Excited User <me@samples.mailgun.org>',
+                            from: `bpl-pass-notification@${MAILGUN_DOMAIN}`,
+                            to: dataFromPrisma[i].email,
+                            // to: 'bar@example.com, YOU@YOUR_DOMAIN_NAME',
+                            subject: 'Boston Public Library Museum Pass Notification',
+                            text: 'Greetings! \n\n' +
                                 'Unfortunately, no additional museum passes have become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
                                 'Please visit the link below for other museums to consider!\n\n' + new URL("https://www.bpl.org/reserve-a-museum-pass/") + '\n\n' +
                                 'Wishing you a pleasant rest of the day.\n\n' +
@@ -138,49 +125,46 @@ export async function updateCache() {
                                 'Eric Fletcher\n' +
                                 'BPL Pass Notification Developer\n' +
                                 'EricFletcher3@gmail.com' + '\n' +
-                                new URL("https://bpl-museum-passes.vercel.app/"),
-                            from: '+18145606408',
-                            to: dataFromPrisma[i].phone.trim().replace(/[^0-9]/g, '')
-                        })
-                        .then(message => console.log("Phone Message SID: " + message.sid));
-                    const deleteRequest = await prisma.request.delete({
-                        where: {
-                            id: dataFromPrisma[i].id
-                        }
-                    });
-                } else {
-                    // Send email and/or mobile phone notification if the current number of passes available is greater
-                    // than the initial number of passes available from the database
-                    if (museumObj[Object.keys(museumObj)[j]][dataFromPrisma[i].dateOfVisit] !== undefined && dataFromPrisma[i].initialNumPasses < museumObj[Object.keys(museumObj)[j]][dataFromPrisma[i].dateOfVisit]) {
-                        let a = new URL(dataFromPrisma[i].url);
-                        if (dataFromPrisma[i].email !== null && dataFromPrisma[i].email !== "") {
-                            console.log("Sending email to: " + dataFromPrisma[i].email);
-                            const data2 = {
-                                // from: 'Excited User <me@samples.mailgun.org>',
-                                from: `bpl-pass-notification@${MAILGUN_DOMAIN}`,
-                                to: dataFromPrisma[i].email,
-                                // to: 'bar@example.com, YOU@YOUR_DOMAIN_NAME',
-                                subject: 'Boston Public Library Museum Pass Notification',
-                                text: 'Greetings! \n\n' +
-                                    'This is a notification that a museum pass has become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
-                                    'Please visit the link below to reserve this pass.\n\n' + a + '\n\n' +
-                                    'Note that this pass is first come first serve, so the quicker you visit the link, the better chances you have of securing the pass!\n\n' +
+                                new URL("https://bpl-museum-passes.vercel.app/")
+                        };
+                        mg.messages().send(data2, function (error, body) {
+                            console.log("Email Body: " + body);
+                        });
+                        console.log("Sending SMS to: " + dataFromPrisma[i].phone);
+                        client.messages
+                            .create({
+                                body: 'Greetings! \n\n' +
+                                    'Unfortunately, no additional museum passes have become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
+                                    'Please visit the link below for other museums to consider!\n\n' + new URL("https://www.bpl.org/reserve-a-museum-pass/") + '\n\n' +
+                                    'Wishing you a pleasant rest of the day.\n\n' +
                                     'Sincerely,\n\n' +
                                     'Eric Fletcher\n' +
                                     'BPL Pass Notification Developer\n' +
                                     'EricFletcher3@gmail.com' + '\n' +
                                     new URL("https://bpl-museum-passes.vercel.app/"),
-                            };
-                            mg.messages().send(data2, function (error, body) {
-                                console.log("Email Body: " + body);
-                            });
-                        }
-                        if (dataFromPrisma[i].phone !== null && dataFromPrisma[i].phone !== "") {
-                            console.log("Sending SMS to: " + dataFromPrisma[i].phone);
-
-                            client.messages
-                                .create({
-                                    body: 'Greetings! \n\n' +
+                                from: '+18145606408',
+                                to: dataFromPrisma[i].phone.trim().replace(/[^0-9]/g, '')
+                            })
+                            .then(message => console.log("Phone Message SID: " + message.sid));
+                        const deleteRequest = await prisma.request.delete({
+                            where: {
+                                id: dataFromPrisma[i].id
+                            }
+                        });
+                    } else {
+                        // Send email and/or mobile phone notification if the current number of passes available is greater
+                        // than the initial number of passes available from the database
+                        if (museumObj[Object.keys(museumObj)[j]][dataFromPrisma[i].dateOfVisit] !== undefined && dataFromPrisma[i].initialNumPasses < museumObj[Object.keys(museumObj)[j]][dataFromPrisma[i].dateOfVisit]) {
+                            let a = new URL(dataFromPrisma[i].url);
+                            if (dataFromPrisma[i].email !== null && dataFromPrisma[i].email !== "") {
+                                console.log("Sending email to: " + dataFromPrisma[i].email);
+                                const data2 = {
+                                    // from: 'Excited User <me@samples.mailgun.org>',
+                                    from: `bpl-pass-notification@${MAILGUN_DOMAIN}`,
+                                    to: dataFromPrisma[i].email,
+                                    // to: 'bar@example.com, YOU@YOUR_DOMAIN_NAME',
+                                    subject: 'Boston Public Library Museum Pass Notification',
+                                    text: 'Greetings! \n\n' +
                                         'This is a notification that a museum pass has become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
                                         'Please visit the link below to reserve this pass.\n\n' + a + '\n\n' +
                                         'Note that this pass is first come first serve, so the quicker you visit the link, the better chances you have of securing the pass!\n\n' +
@@ -189,20 +173,42 @@ export async function updateCache() {
                                         'BPL Pass Notification Developer\n' +
                                         'EricFletcher3@gmail.com' + '\n' +
                                         new URL("https://bpl-museum-passes.vercel.app/"),
-                                    from: '+18145606408',
-                                    to: dataFromPrisma[i].phone.trim().replace(/[^0-9]/g, '')
-                                })
-                                .then(message => console.log("Phone Message SID: " + message.sid));
-                        }
-                        const deleteRequest = await prisma.request.delete({
-                            where: {
-                                id: dataFromPrisma[i].id
+                                };
+                                mg.messages().send(data2, function (error, body) {
+                                    console.log("Email Body: " + body);
+                                });
                             }
-                        });
+                            if (dataFromPrisma[i].phone !== null && dataFromPrisma[i].phone !== "") {
+                                console.log("Sending SMS to: " + dataFromPrisma[i].phone);
+
+                                client.messages
+                                    .create({
+                                        body: 'Greetings! \n\n' +
+                                            'This is a notification that a museum pass has become available for ' + dataFromPrisma[i].museum + ' on ' + dataFromPrisma[i].dateOfVisit + '.' + '\n\n' +
+                                            'Please visit the link below to reserve this pass.\n\n' + a + '\n\n' +
+                                            'Note that this pass is first come first serve, so the quicker you visit the link, the better chances you have of securing the pass!\n\n' +
+                                            'Sincerely,\n\n' +
+                                            'Eric Fletcher\n' +
+                                            'BPL Pass Notification Developer\n' +
+                                            'EricFletcher3@gmail.com' + '\n' +
+                                            new URL("https://bpl-museum-passes.vercel.app/"),
+                                        from: '+18145606408',
+                                        to: dataFromPrisma[i].phone.trim().replace(/[^0-9]/g, '')
+                                    })
+                                    .then(message => console.log("Phone Message SID: " + message.sid));
+                            }
+                            const deleteRequest = await prisma.request.delete({
+                                where: {
+                                    id: dataFromPrisma[i].id
+                                }
+                            });
+                        }
                     }
                 }
             }
         }
+    } catch (err) {
+        console.log(err);
     }
 
 	cache.value = {
@@ -211,4 +217,5 @@ export async function updateCache() {
 		museumNamesForScraping: museumNamesForScraping,
 		museumObj: museumObj
 	}
+
 }
